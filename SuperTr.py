@@ -2,7 +2,9 @@ import pandas as pd
 import ta
 import ccxt 
 import schedule
-
+import time 
+import numpy as np
+from datetime import datetime
 
 pd.set_option('display.max_rows', None)
 
@@ -11,9 +13,6 @@ api_key = 'ZfEY8UJxwAaEkzUpEqHQ6ZI22OWVroA3iFggnKaTiuLkYxVSbMtOyIkTNje4q8yS'
 api_secret = 'D1bo6V8bi196PCMlGOgMNcRWEbHD8LgavQyctsBjnCq83kaCkGXx8mLvywG24hN'
 
 exchange = ccxt.binance()
-bars = exchange.fetch_ohlcv('BTC/USDT', timeframe='1d', limit=200)
-df = pd.DataFrame(bars[:-1], columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
 
 def tr(df):
     df['previous_close'] = df['close'].shift(1)
@@ -49,5 +48,20 @@ def supertrend(df, period=7, multiplier=3):
 
     return df
 
-df = supertrend(df, period=5)
-print(df[['timestamp', 'open', 'high', 'low', 'close', 'volume', 'upperband', 'lowerband', 'in_uptrend','tr','atr']])
+#df = supertrend(df, period=5)
+#print(df[['timestamp', 'open', 'high', 'low', 'close', 'volume', 'upperband', 'lowerband', 'in_uptrend','tr','atr']])
+
+
+def fetch_bars():
+    print("Fetching new bars for {}".format(datetime.now().isoformat()))
+    bars = exchange.fetch_ohlcv('BTC/USDT', timeframe='1m', limit=5 )
+    df = pd.DataFrame(bars[:-1], columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+    print(df)
+
+
+schedule.every(10).seconds.do(fetch_bars)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
